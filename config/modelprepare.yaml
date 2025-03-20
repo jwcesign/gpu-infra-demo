@@ -1,0 +1,52 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: model-sc
+provisioner: kubernetes.io/aws-ebs
+parameters:
+  type: gp3
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: model-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: model-sc
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: prepare-model
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: model-storage
+          persistentVolumeClaim:
+            claimName: model-pvc 
+      containers:
+        - name: prepare
+          image: alpine:latest
+          volumeMounts:
+            - mountPath: "/mnt/sd"
+              name: model-storage
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              apk add --no-cache wget
+              CHECKPOINT_URL="https://civitai.com/api/download/models/1490781?type=Model&format=SafeTensor&size=pruned&fp=fp16"
+              CHECKPOINT_PATH="/mnt/sd/waiNSFWIllustrious_v120.safetensors"
+
+              if [ ! -f "$CHECKPOINT_PATH" ]; then
+                  echo "Downloading Stable Diffusion checkpoint..."
+                  wget -O "$CHECKPOINT_PATH" "$CHECKPOINT_URL"
+                  echo "Download complete!"
+              else
+                  echo "Checkpoint already exists at $CHECKPOINT_PATH"
+              fi

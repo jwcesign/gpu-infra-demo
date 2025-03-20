@@ -1,0 +1,49 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: hello
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/min-scale: "1"
+    spec:
+      containerConcurrency: 1
+      initContainers:
+      - name: model-downloader
+        image: busybox
+        command: ["sh", "-c"]
+        args:
+          - |
+            echo 222
+            wget -O /data/Loraeyes_V1.safetensors "https://civitai.com/api/download/models/6433?type=Model&format=SafeTensor&size=full&fp=fp16"
+            ls .
+            cat *
+            touch /data/asd
+            echo 111
+            ls /data
+            echo 333
+        volumeMounts:
+        - name: shared-data
+          mountPath: /data
+      containers:
+        - name: sd-webui
+          image: public.ecr.aws/cloudpilotai/stable-diffusion:latest
+          ports:
+          - containerPort: 7860
+          env:
+          - name: WEB_ENABLE_AUTH
+            value: "false"
+          - name: WEBUI_ARGS
+            value: "--api --listen --always-batch-cond-uncond --opt-split-attention --device-id=0"
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+            requests:
+              nvidia.com/gpu: 1
+          volumeMounts:
+          - name: shared-data
+            mountPath: /opt/stable-diffusion-webui/models/Lora
+      volumes:
+      - name: shared-data
+        emptyDir: {}
