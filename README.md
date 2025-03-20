@@ -6,9 +6,9 @@ The overview of the architecture is as follows:
 ![img](img/image.png)
 
 With this arch, customer will only manage the following resources:
-1.One yaml to deploy their service.
-2.Several kubectl command operations, like kubetl get xxx.
-3.Upgrade EKS clusters periodically.
+1. One yaml to deploy their service.
+2. Several kubectl command operations, like kubetl get xxx.
+3. Upgrade EKS clusters periodically.
 
 ## 1. Create EKS
 
